@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FIAP.APIContato", "FIAP.APIContato.csproj", "{EA37654A-D6A6-4C57-B05B-75DB506E0AC4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA37654A-D6A6-4C57-B05B-75DB506E0AC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA37654A-D6A6-4C57-B05B-75DB506E0AC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA37654A-D6A6-4C57-B05B-75DB506E0AC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA37654A-D6A6-4C57-B05B-75DB506E0AC4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BDCA4FB1-D830-4930-8803-218B0A8ADA81}
+	EndGlobalSection
+EndGlobal
