@@ -35,9 +35,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore ${{ env.Solution_Name }}
 
-    # 4. Compilar o projeto principal
-    - name: Build API project
-      run: dotnet build ${{ env.Api_Project_Path }} --configuration ${{ matrix.configuration }} --no-restore
+    # 4. Compilar a solução inteira (com testes inclusos)
+    - name: Build solution
+      run: dotnet build ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --no-restore
 
     # 5. Executar testes unitários
     - name: Run unit tests
