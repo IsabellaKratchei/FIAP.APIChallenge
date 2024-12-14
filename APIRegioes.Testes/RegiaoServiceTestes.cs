@@ -1,6 +1,7 @@
 using FIAP.APIRegiao.Models;
 using FIAP.APIRegiao.Repository;
 using FIAP.APIRegiao.Service;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
 using System.Threading.Tasks;
@@ -10,41 +11,58 @@ namespace APIRegioes.Testes
     [TestFixture]
     public class RegiaoServiceTestes
     {
-        private Mock<IRegiaoRepository> _mockRepository = null!;
+        private RegiaoDbContext _dbContext = null!;
         private RegiaoService _service = null!;
 
         [SetUp]
         public void Setup()
         {
-            _mockRepository = new Mock<IRegiaoRepository>();
-            _service = new RegiaoService(_mockRepository.Object);
+            // Configura o DbContext em memória
+            var options = new DbContextOptionsBuilder<RegiaoDbContext>()
+                .UseInMemoryDatabase(databaseName: "TestDatabase")
+                .Options;
+
+            _dbContext = new RegiaoDbContext(options);
+
+            // Cria o serviço passando o DbContext em memória
+            _service = new RegiaoService(new RegiaoRepository(_dbContext));
         }
 
         [Test]
         public async Task BuscarRegiaoPorDDD_ExistingDDD_ReturnsRegiao()
         {
-            // Arrange
+            // Arrange: Popula o banco em memória com um registro
             var expectedRegiao = new RegiaoModel { Id = 1, DDD = "11", Regiao = "Sudeste" };
-            _mockRepository.Setup(repo => repo.BuscarRegiaoPorDDDAsync("11")).ReturnsAsync(expectedRegiao);
+            _dbContext.DDDs.Add(expectedRegiao);
+            await _dbContext.SaveChangesAsync();
 
-            // Act
+            // Act: Chama o método do serviço
             var result = await _service.ObterRegiaoPorDDDAsync("11");
 
-            // Assert
-            Assert.That(result, Is.EqualTo(expectedRegiao));
+            // Assert: Verifica se o retorno é o esperado
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.DDD, Is.EqualTo(expectedRegiao.DDD));
+            Assert.That(result.Regiao, Is.EqualTo(expectedRegiao.Regiao));
         }
 
         [Test]
         public async Task BuscarRegiaoPorDDD_NonExistingDDD_ReturnsNull()
         {
-            // Arrange
-            _mockRepository.Setup(repo => repo.BuscarRegiaoPorDDDAsync("999")).ReturnsAsync((RegiaoModel?)null);
+            // Arrange: Banco em memória vazio
 
-            // Act
+            // Act: Chama o método do serviço para um DDD que não existe
             var result = await _service.ObterRegiaoPorDDDAsync("999");
 
-            // Assert
+            // Assert: Verifica se o retorno é nulo
             Assert.That(result, Is.Null);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Limpa o banco de dados em memória entre testes
+            _dbContext.Database.EnsureDeleted();
+            _dbContext.Dispose();
         }
     }
 }
