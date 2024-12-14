@@ -10,9 +10,22 @@ namespace FIAP.APIRegiao
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Verifica se estamos em ambiente de testes
+            var isTesting = builder.Environment.IsEnvironment("Testing");
+
             // Configuração de serviços
-            builder.Services.AddDbContext<RegiaoDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            if (isTesting)
+            {
+                // Usar banco em memória nos testes
+                builder.Services.AddDbContext<RegiaoDbContext>(options =>
+                    options.UseInMemoryDatabase("TestDatabase"));
+            }
+            else
+            {
+                // Usar SQL Server em produção
+                builder.Services.AddDbContext<RegiaoDbContext>(options =>
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            }
 
             builder.Services.AddScoped<IRegiaoRepository, RegiaoRepository>();
             builder.Services.AddScoped<IRegiaoService, RegiaoService>();
@@ -32,6 +45,7 @@ namespace FIAP.APIRegiao
             });
 
             var app = builder.Build();
+
             // Chama o método para popular os dados
             using (var scope = app.Services.CreateScope())
             {
@@ -62,18 +76,36 @@ namespace FIAP.APIRegiao
 
         private static async Task PopulaRegioesSeVazioAsync(RegiaoDbContext context, ILogger logger)
         {
+            // Verifica se estamos no ambiente de teste
+            var isTestingEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Testing";
+
             // Verifica se já existem registros na tabela de regiões
             if (!await context.DDDs.AnyAsync())
             {
-                var scriptPath = Path.Combine(Directory.GetCurrentDirectory(), "Scripts", "ScriptRegioes.sql");
+                // Defina o caminho do arquivo SQL para popular o banco de dados
+                var scriptPath = Path.Combine(Directory.GetCurrentDirectory(), "Scripts", "ScriptDDD.sql");
+
+                // Verifique se o arquivo de script existe
                 if (File.Exists(scriptPath))
                 {
                     logger.LogInformation("Executando script para popular tabela de regiões...");
 
+                    // Leia o conteúdo do arquivo SQL
                     var scriptSql = await File.ReadAllTextAsync(scriptPath);
-                    await context.Database.ExecuteSqlRawAsync(scriptSql);
 
-                    logger.LogInformation("Tabela de regiões populada com sucesso.");
+                    // Se estiver no ambiente de teste, executa no banco em memória
+                    if (isTestingEnvironment)
+                    {
+                        // Executa o script no banco em memória
+                        await context.Database.ExecuteSqlRawAsync(scriptSql);
+                        logger.LogInformation("Tabela de regiões populada com sucesso no banco em memória.");
+                    }
+                    else
+                    {
+                        // Se for ambiente de produção, pode executar no banco de dados real
+                        await context.Database.ExecuteSqlRawAsync(scriptSql);
+                        logger.LogInformation("Tabela de regiões populada com sucesso no banco de dados real.");
+                    }
                 }
                 else
                 {
@@ -85,5 +117,6 @@ namespace FIAP.APIRegiao
                 logger.LogInformation("Tabela de regiões já está populada.");
             }
         }
+
     }
 }

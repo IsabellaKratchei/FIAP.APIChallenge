@@ -17,13 +17,22 @@ namespace APIRegioes.Testes
         [SetUp]
         public void Setup()
         {
-            // Força o uso do banco em memória
+            // Defina a variável de ambiente para "Testing" antes de configurar o WebApplicationFactory
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
+
+            // Configura o banco de dados em memória
             var options = new DbContextOptionsBuilder<RegiaoDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase")
+                .UseInMemoryDatabase("TestDatabase") // Banco único para os testes
                 .Options;
 
-            // Inicializa o contexto e o serviço
+            // Inicializa o contexto com o banco em memória
             _dbContext = new RegiaoDbContext(options);
+
+            // Limpa o banco de dados antes de cada teste
+            _dbContext.Database.EnsureDeleted();
+            _dbContext.Database.EnsureCreated();
+
+            // Inicializa o repositório e o serviço
             var repository = new RegiaoRepository(_dbContext);
             _service = new RegiaoService(repository);
         }
