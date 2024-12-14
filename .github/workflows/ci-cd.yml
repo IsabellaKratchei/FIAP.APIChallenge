@@ -21,28 +21,26 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '8.0'  # Ajuste a versão conforme necessário
+        dotnet-version: '8.0'  # Ajuste para a versão do .NET usada no seu projeto
 
     # 3. Restaurar dependências
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore FIAP.APIRegiao.sln
 
-    # 4. Build do projeto
+    # 4. Build do projeto principal
     - name: Build project
-      run: dotnet build --configuration Release
+      run: dotnet build FIAP.APIRegiao.sln --configuration Release --no-restore
 
-    # 5. Testar a API
+    # 5. Executar testes do projeto APIRegioes.Testes
     - name: Run tests
-      run: dotnet test --configuration Release --no-build --logger "trx" # --no-build se a build foi feita anteriormente
+      run: dotnet test APIRegioes.Testes/APIRegioes.Testes.csproj --configuration Release --no-build --logger "trx"
 
-    # 6. Publicar (caso necessário)
-    - name: Publish project
-      run: dotnet publish --configuration Release --output ./publish
+    # 6. Publicar a API (caso necessário)
+    - name: Publish API project
+      run: dotnet publish FIAP.APIRegiao/FIAP.APIRegiao.csproj --configuration Release --output ./publish
 
-    # 7. Opcional: Implantação (caso haja alguma configuração de deploy)
+    # 7. Opcional: Implantação (deploy)
     - name: Deploy API
       run: |
-        # Adicione comandos para deploy, como executar um script de deploy
         echo "Deploying application..."
-        # Exemplo:
-        # ssh user@server "deploy.sh"
+        # Comandos adicionais de deploy podem ser colocados aqui
