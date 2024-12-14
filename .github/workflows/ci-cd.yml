@@ -2,45 +2,54 @@ name: CI/CD for Regiao API
 
 on:
   push:
-    branches:
-      - main  # Ou a branch principal do seu projeto
+    branches: [ "main" ]  # Executa o pipeline ao push na branch main
   pull_request:
-    branches:
-      - main  # Para rodar os testes também em pull requests
+    branches: [ "main" ]  # Executa em pull requests na branch main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-and-test:
+
+    strategy:
+      matrix:
+        configuration: [Release]  # Mantido simples, mas pode incluir "Debug" se necessário
+
+    runs-on: ubuntu-latest  # Runner do GitHub Actions
+
+    env:
+      Solution_Name: FIAP.APIRegiao.sln  # Nome da sua solução no diretório raiz
+      Api_Project_Path: FIAP.APIRegiao/FIAP.APIRegiao.csproj
+      Test_Project_Path: APIRegioes.Testes/APIRegioes.Testes.csproj
 
     steps:
-    # 1. Check-out do repositório
-    - name: Checkout code
-      uses: actions/checkout@v2
+    # 1. Check-out do código
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    # 2. Configuração do .NET
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v3
+    # 2. Instalação do SDK .NET 8.0
+    - name: Set up .NET 8.0
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0'  # Ajuste para a versão do .NET usada no seu projeto
+        dotnet-version: 8.0.x
 
-    # 3. Restaurar dependências
+    # 3. Restaurar dependências da solução
     - name: Restore dependencies
-      run: dotnet restore FIAP.APIRegiao.sln
+      run: dotnet restore ${{ env.Solution_Name }}
 
-    # 4. Build do projeto principal
-    - name: Build project
-      run: dotnet build FIAP.APIRegiao.sln --configuration Release --no-restore
+    # 4. Compilar o projeto principal
+    - name: Build API project
+      run: dotnet build ${{ env.Api_Project_Path }} --configuration ${{ matrix.configuration }} --no-restore
 
-    # 5. Executar testes do projeto APIRegioes.Testes
-    - name: Run tests
-      run: dotnet test APIRegioes.Testes/APIRegioes.Testes.csproj --configuration Release --no-build --logger "trx"
+    # 5. Executar testes unitários
+    - name: Run unit tests
+      run: dotnet test ${{ env.Test_Project_Path }} --configuration ${{ matrix.configuration }} --no-build --logger "trx"
 
-    # 6. Publicar a API (caso necessário)
-    - name: Publish API project
-      run: dotnet publish FIAP.APIRegiao/FIAP.APIRegiao.csproj --configuration Release --output ./publish
+    # 6. Publicar a API (pacote pronto para deployment)
+    - name: Publish API
+      run: dotnet publish ${{ env.Api_Project_Path }} --configuration ${{ matrix.configuration }} --output ./publish
 
-    # 7. Opcional: Implantação (deploy)
-    - name: Deploy API
-      run: |
-        echo "Deploying application..."
-        # Comandos adicionais de deploy podem ser colocados aqui
+    # 7. Upload dos artefatos de build (opcional)
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-build
+        path: ./publish
