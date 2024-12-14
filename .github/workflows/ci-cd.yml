@@ -1,0 +1,48 @@
+name: CI/CD for Regiao API
+
+on:
+  push:
+    branches:
+      - main  # Ou a branch principal do seu projeto
+  pull_request:
+    branches:
+      - main  # Para rodar os testes também em pull requests
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Check-out do repositório
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # 2. Configuração do .NET
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0'  # Ajuste a versão conforme necessário
+
+    # 3. Restaurar dependências
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # 4. Build do projeto
+    - name: Build project
+      run: dotnet build --configuration Release
+
+    # 5. Testar a API
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --logger "trx" # --no-build se a build foi feita anteriormente
+
+    # 6. Publicar (caso necessário)
+    - name: Publish project
+      run: dotnet publish --configuration Release --output ./publish
+
+    # 7. Opcional: Implantação (caso haja alguma configuração de deploy)
+    - name: Deploy API
+      run: |
+        # Adicione comandos para deploy, como executar um script de deploy
+        echo "Deploying application..."
+        # Exemplo:
+        # ssh user@server "deploy.sh"

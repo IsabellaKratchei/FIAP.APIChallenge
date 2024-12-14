@@ -5,11 +5,11 @@ namespace FIAP.APIRegiao.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class RegioesController : ControllerBase
+    public class RegiaoController : ControllerBase
     {
         private readonly IRegiaoService _regiaoService;
 
-        public RegioesController(IRegiaoService regiaoService)
+        public RegiaoController(IRegiaoService regiaoService)
         {
             _regiaoService = regiaoService;
         }
