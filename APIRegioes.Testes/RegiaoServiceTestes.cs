@@ -17,15 +17,15 @@ namespace APIRegioes.Testes
         [SetUp]
         public void Setup()
         {
-            // Configura o DbContext em memória
+            // Força o uso do banco em memória
             var options = new DbContextOptionsBuilder<RegiaoDbContext>()
                 .UseInMemoryDatabase(databaseName: "TestDatabase")
                 .Options;
 
+            // Inicializa o contexto e o serviço
             _dbContext = new RegiaoDbContext(options);
-
-            // Cria o serviço passando o DbContext em memória
-            _service = new RegiaoService(new RegiaoRepository(_dbContext));
+            var repository = new RegiaoRepository(_dbContext);
+            _service = new RegiaoService(repository);
         }
 
         [Test]
