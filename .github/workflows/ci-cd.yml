@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest  # Runner do GitHub Actions
 
     env:
-      Solution_Name: FIAP.APIRegiao.sln  # Nome da sua solução no diretório raiz
+      Solution_Name: FIAP.APIRegiao/FIAP.APIRegiao.sln  # Nome da sua solução no diretório raiz
       Api_Project_Path: FIAP.APIRegiao/FIAP.APIRegiao.csproj
       Test_Project_Path: APIRegioes.Testes/APIRegioes.Testes.csproj
 
