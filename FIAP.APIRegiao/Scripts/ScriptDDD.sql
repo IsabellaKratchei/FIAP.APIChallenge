@@ -1,5 +1,4 @@
 ﻿USE [FIAP]
-GO
 
 INSERT INTO DDDs (DDD, Regiao) VALUES
 ('11', 'Sudeste'), -- São Paulo (Capital)
@@ -69,4 +68,3 @@ INSERT INTO DDDs (DDD, Regiao) VALUES
 ('97', 'Norte'),    -- Amazonas (Interior)
 ('98', 'Nordeste'), -- Maranhão (Capital e região metropolitana)
 ('99', 'Nordeste'); -- Maranhão (Interior)
-GO
