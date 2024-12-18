@@ -1,4 +1,5 @@
-﻿using FIAP.APIRegiao.Repository;
+﻿using FIAP.APIRegiao.Events;
+using FIAP.APIRegiao.Repository;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FIAP.APIRegiao.Controller
@@ -8,10 +9,12 @@ namespace FIAP.APIRegiao.Controller
     public class RegiaoController : ControllerBase
     {
         private readonly IRegiaoService _regiaoService;
+        private readonly RegiaoProducer _regiaoProducer;
 
-        public RegiaoController(IRegiaoService regiaoService)
+        public RegiaoController(IRegiaoService regiaoService, RegiaoProducer regiaoProducer)
         {
             _regiaoService = regiaoService;
+            _regiaoProducer = regiaoProducer;
         }
 
         [HttpGet("{ddd}")]
@@ -21,6 +24,9 @@ namespace FIAP.APIRegiao.Controller
 
             if (regiao == null)
                 return NotFound(new { Message = $"DDD '{ddd}' não encontrado." });
+
+            // Publicar mensagem
+            _regiaoProducer.PublicarMensagem($"Consulta realizada para DDD: {ddd}, Região: {regiao.Regiao}");
 
             return Ok(regiao);
         }

@@ -6,10 +6,12 @@ namespace FIAP.APIContato.Services
     public class ContatoService : IContatoService
     {
         private readonly IContatoRepository _contatoRepository;
+        private readonly IRegiaoRepository _regiaoRepository;
 
-        public ContatoService(IContatoRepository contatoRepository)
+        public ContatoService(IContatoRepository contatoRepository, IRegiaoRepository regiaoRepository)
         {
             _contatoRepository = contatoRepository;
+            _regiaoRepository = regiaoRepository; // Injetando o repositório de região
         }
 
         public async Task<ContatoModel> BuscarPorIdAsync(int id)
@@ -26,6 +28,16 @@ namespace FIAP.APIContato.Services
         {
             try
             {
+                // Obter a região baseada no DDD
+                var regiao = await _regiaoRepository.BuscarRegiaoPorDDDAsync(contato.DDD);
+                if (regiao == null)
+                {
+                    throw new Exception($"DDD '{contato.DDD}' não encontrado.");
+                }
+
+                // Atribuir a região ao contato
+                contato.Regiao = regiao.Regiao;
+
                 var novoContato = await _contatoRepository.AdicionarAsync(contato);
 
                 // Publicar evento no RabbitMQ para criação do contato
@@ -43,6 +55,16 @@ namespace FIAP.APIContato.Services
         {
             try
             {
+                // Obter a região baseada no DDD
+                var regiao = await _regiaoRepository.BuscarRegiaoPorDDDAsync(contato.DDD);
+                if (regiao == null)
+                {
+                    throw new Exception($"DDD '{contato.DDD}' não encontrado.");
+                }
+
+                // Atribuir a região ao contato
+                contato.Regiao = regiao.Regiao;
+
                 var contatoEditado = await _contatoRepository.EditarAsync(contato);
 
                 // Publicar evento no RabbitMQ para edição do contato

@@ -1,5 +1,4 @@
 ﻿using FIAP.APIRegiao.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace FIAP.APIRegiao.Repository
 {

@@ -1,3 +1,4 @@
+using FIAP.APIRegiao.Events;
 using FIAP.APIRegiao.Repository;
 using FIAP.APIRegiao.Service;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,9 @@ namespace FIAP.APIRegiao
 
             builder.Services.AddScoped<IRegiaoRepository, RegiaoRepository>();
             builder.Services.AddScoped<IRegiaoService, RegiaoService>();
+            builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("RabbitMQSettings"));
+            builder.Services.AddSingleton<RegiaoProducer>();
+            builder.Services.AddScoped<RegiaoConsumer>();
 
             builder.Services.AddControllers();
 
@@ -43,15 +47,27 @@ namespace FIAP.APIRegiao
                     Description = "API para gerenciamento de regiões com base no DDD"
                 });
             });
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                });
+            });
 
             var app = builder.Build();
 
-            // Chama o método para popular os dados
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
                 var logger = services.GetRequiredService<ILogger<Program>>();
                 var context = services.GetRequiredService<RegiaoDbContext>();
+                var consumer = scope.ServiceProvider.GetRequiredService<RegiaoConsumer>();
+                // Iniciar o consumidor de forma assíncrona sem bloquear o resto da execução
+                _ = Task.Run(() => consumer.ConsumirMensagens());
+                Console.WriteLine("Consumidor de mensagens iniciado com sucesso.");
                 await PopulaRegioesSeVazioAsync(context, logger);
             }
 
@@ -63,10 +79,11 @@ namespace FIAP.APIRegiao
                 app.UseSwaggerUI(options =>
                 {
                     options.SwaggerEndpoint("/swagger/v1/swagger.json", "API de Regiões v1");
-                    options.RoutePrefix = string.Empty;  // Abre na raiz do projeto
+                    options.RoutePrefix = "swagger";  // Abre na raiz do projeto
                 });
             }
 
+            app.UseCors("AllowAll");
             app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();

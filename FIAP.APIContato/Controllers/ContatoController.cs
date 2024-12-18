@@ -9,10 +9,12 @@ namespace FIAP.APIContato.Controllers
     public class ContatoController : ControllerBase
     {
         private readonly IContatoService _contatoService;
+        private readonly IContatoRepository _contatoRepository;
 
-        public ContatoController(IContatoService contatoService)
+        public ContatoController(IContatoService contatoService, IContatoRepository contatoRepository)
         {
             _contatoService = contatoService;
+            _contatoRepository = contatoRepository;
         }
 
         // Método para buscar todos os contatos
@@ -50,28 +52,39 @@ namespace FIAP.APIContato.Controllers
         }
 
         // Método para adicionar um novo contato
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody] ContatoModel contato)
+        [HttpPost("Criar")]
+        public async Task<IActionResult> Criar(ContatoModel contato)
         {
+            if (contato == null)
+            {
+                return BadRequest("Contato não pode ser nulo.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                if (contato == null)
-                {
-                    return BadRequest("Contato não pode ser nulo.");
-                }
-
-                var novoContato = await _contatoService.AdicionarAsync(contato);
-
+                var novoContato = await _contatoRepository.AdicionarAsync(contato);
                 return CreatedAtAction(nameof(GetById), new { id = novoContato.Id }, novoContato);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Exceção específica
+                return BadRequest($"Erro de operação inválida: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return BadRequest($"Erro ao adicionar contato: {ex.Message}");
+                // Exceção genérica
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"Erro interno ao adicionar contato: {ex.Message}");
             }
         }
 
         // Método para editar um contato existente
-        [HttpPut("{id}")]
+        [HttpPut("Editar/{id}")]
         public async Task<IActionResult> Put(int id, [FromBody] ContatoModel contato)
         {
             try
@@ -93,7 +106,7 @@ namespace FIAP.APIContato.Controllers
         }
 
         // Método para excluir um contato
-        [HttpDelete("{id}")]
+        [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             try

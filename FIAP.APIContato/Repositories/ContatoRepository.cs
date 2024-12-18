@@ -12,10 +12,10 @@ namespace FIAP.APIContato.Repositories
         private readonly ContatosDbContext _dbContext;
         private readonly HttpClient _httpClient;
 
-        public ContatoRepository(ContatosDbContext dbContext, HttpClient httpClient)
+        public ContatoRepository(ContatosDbContext dbContext, IHttpClientFactory httpClientFactory)
         {
-            _dbContext = dbContext;
-            _httpClient = httpClient;
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            _httpClient = httpClientFactory.CreateClient("ApiRegiao");
         }
 
         // Buscar contato por ID
@@ -59,7 +59,7 @@ namespace FIAP.APIContato.Repositories
             }
             catch (Exception ex)
             {
-                throw new Exception("Erro ao adicionar contato: " + ex.Message);
+                throw new Exception("Erro ao adicionar contato: " + ex);
             }
         }
 
@@ -137,10 +137,11 @@ namespace FIAP.APIContato.Repositories
         // Obter região de outro microsserviço (via HTTP)
         private async Task<string> ObterRegiaoPorDDDAsync(string ddd)
         {
-            var response = await _httpClient.GetAsync($"https://regioes.api/ddd/{ddd}");
+            var response = await _httpClient.GetAsync($"Regiao/{ddd}");
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadAsStringAsync();
+                var conteudo = await response.Content.ReadFromJsonAsync<RegiaoModel>();
+                return conteudo?.Regiao;
             }
 
             return null;
@@ -173,6 +174,11 @@ namespace FIAP.APIContato.Repositories
             {
                 throw new Exception("Erro ao publicar mensagem no RabbitMQ: " + ex.Message);
             }
+        }
+
+        public void PublicarEventoNoRabbitMQ(string evento, ContatoModel contato)
+        {
+            throw new NotImplementedException();
         }
     }
 }
