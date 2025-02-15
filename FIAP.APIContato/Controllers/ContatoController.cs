@@ -1,6 +1,7 @@
 using FIAP.APIContato.Models;
 using FIAP.APIContato.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FIAP.APIContato.Controllers
 {
@@ -11,7 +12,9 @@ namespace FIAP.APIContato.Controllers
         private readonly IContatoService _contatoService;
         private readonly IContatoRepository _contatoRepository;
 
-        public ContatoController(IContatoService contatoService, IContatoRepository contatoRepository)
+        public ContatoController(
+            IContatoService contatoService, 
+            IContatoRepository contatoRepository)
         {
             _contatoService = contatoService;
             _contatoRepository = contatoRepository;
@@ -84,8 +87,8 @@ namespace FIAP.APIContato.Controllers
         }
 
         // Método para editar um contato existente
-        [HttpPut("Editar/{id}")]
-        public async Task<IActionResult> Put(int id, [FromBody] ContatoModel contato)
+        [HttpPost("Editar/{id}")]
+        public async Task<IActionResult> Editar(int id, [FromBody] ContatoModel contato)
         {
             try
             {
@@ -95,7 +98,7 @@ namespace FIAP.APIContato.Controllers
                 }
 
                 contato.Id = id; // Garantir que o ID seja o mesmo
-                var contatoEditado = await _contatoService.EditarAsync(contato);
+                var contatoEditado = await _contatoRepository.EditarAsync(contato);
 
                 return Ok(contatoEditado);
             }
@@ -105,9 +108,8 @@ namespace FIAP.APIContato.Controllers
             }
         }
 
-        // Método para excluir um contato
-        [HttpDelete("Delete/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("Apagar/{id}")]
+        public async Task<IActionResult> Apagar(int id)
         {
             try
             {

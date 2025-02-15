@@ -5,7 +5,12 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FIAP.APIContato", "FIAP.APIContato.csproj", "{EA37654A-D6A6-4C57-B05B-75DB506E0AC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APIContato.Testes", "..\APIContato.Testes\APIContato.Testes.csproj", "{EA30F051-0C9E-4AB8-85FC-50D8F3E9C3A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "APIContato.Testes", "..\APIContato.Testes\APIContato.Testes.csproj", "{EA30F051-0C9E-4AB8-85FC-50D8F3E9C3A3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Itens de Solução", "Itens de Solução", "{2D7B8FB6-5D2F-40C8-8519-45FB6C5871C6}"
+	ProjectSection(SolutionItems) = preProject
+		Dockerfile.txt = Dockerfile.txt
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

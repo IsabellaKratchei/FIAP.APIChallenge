@@ -1,5 +1,9 @@
 ﻿using FIAP.APIContato.Models;
 using FIAP.APIContato.Repositories;
+using RabbitMQ.Client;
+using System.Text.Json;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace FIAP.APIContato.Services
 {
@@ -41,7 +45,7 @@ namespace FIAP.APIContato.Services
                 var novoContato = await _contatoRepository.AdicionarAsync(contato);
 
                 // Publicar evento no RabbitMQ para criação do contato
-                _contatoRepository.PublicarEventoNoRabbitMQ("ContatoCriado", novoContato);
+                //_contatoRepository.PublicarEventoNoRabbitMQ("ContatoCriado", novoContato);
 
                 return novoContato;
             }
@@ -68,7 +72,7 @@ namespace FIAP.APIContato.Services
                 var contatoEditado = await _contatoRepository.EditarAsync(contato);
 
                 // Publicar evento no RabbitMQ para edição do contato
-                _contatoRepository.PublicarEventoNoRabbitMQ("ContatoEditado", contatoEditado);
+                //_contatoRepository.PublicarEventoNoRabbitMQ("ContatoEditado", contatoEditado);
 
                 return contatoEditado;
             }
@@ -80,27 +84,48 @@ namespace FIAP.APIContato.Services
 
         public async Task<bool> ApagarAsync(int id)
         {
-            try
+            var contato = await _contatoRepository.BuscarPorIdAsync(id);
+            if (contato == null)
             {
-                var sucesso = await _contatoRepository.ApagarAsync(id);
-
-                // Publicar evento no RabbitMQ para exclusão do contato
-                if (sucesso)
-                {
-                    _contatoRepository.PublicarEventoNoRabbitMQ("ContatoExcluido", new ContatoModel { Id = id });
-                }
-
-                return sucesso;
+                return false; // Contato não encontrado
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Erro ao excluir contato: {ex.Message}");
-            }
+
+            await _contatoRepository.ApagarAsync(contato.Id);
+            return true; // Exclusão bem-sucedida
         }
 
         public async Task<List<ContatoModel>> BuscarPorDDDAsync(string ddd)
         {
             return await _contatoRepository.BuscarPorDDDAsync(ddd);
+        }
+
+        // Publicar eventos no RabbitMQ
+        private void PublicarMensagemNoRabbitMQ(string evento, ContatoModel contato)
+        {
+            try
+            {
+                var factory = new ConnectionFactory() { HostName = "localhost" };
+                using var connection = factory.CreateConnection();
+                using var channel = connection.CreateModel();
+
+                channel.QueueDeclare(queue: "contato_eventos",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+
+                var mensagem = JsonSerializer.Serialize(new { Evento = evento, Contato = contato });
+                var body = Encoding.UTF8.GetBytes(mensagem);
+
+                channel.BasicPublish(exchange: "",
+                                     routingKey: "contato_eventos",
+                                     basicProperties: null,
+                                     body: body);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Erro ao publicar mensagem no RabbitMQ: " + ex.Message);
+            }
         }
     }
 }

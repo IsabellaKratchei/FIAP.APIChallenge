@@ -53,7 +53,7 @@ namespace FIAP.APIContato.Repositories
                 await _dbContext.SaveChangesAsync();
 
                 // Publicar o evento no RabbitMQ
-                PublicarMensagemNoRabbitMQ("ContatoCriado", contato);
+                //PublicarMensagemNoRabbitMQ("ContatoCriado", contato);
 
                 return contato;
             }
@@ -93,7 +93,7 @@ namespace FIAP.APIContato.Repositories
                 await _dbContext.SaveChangesAsync();
 
                 // Publicar o evento no RabbitMQ
-                PublicarMensagemNoRabbitMQ("ContatoAtualizado", contatoBD);
+                //PublicarMensagemNoRabbitMQ("ContatoAtualizado", contatoBD);
 
                 return contatoBD;
             }
@@ -118,7 +118,7 @@ namespace FIAP.APIContato.Repositories
                 await _dbContext.SaveChangesAsync();
 
                 // Publicar o evento no RabbitMQ
-                PublicarMensagemNoRabbitMQ("ContatoApagado", contato);
+                //PublicarMensagemNoRabbitMQ("ContatoApagado", contato);
 
                 return true;
             }
@@ -145,40 +145,6 @@ namespace FIAP.APIContato.Repositories
             }
 
             return null;
-        }
-
-        // Publicar eventos no RabbitMQ
-        private void PublicarMensagemNoRabbitMQ(string evento, ContatoModel contato)
-        {
-            try
-            {
-                var factory = new ConnectionFactory() { HostName = "localhost" };
-                using var connection = factory.CreateConnection();
-                using var channel = connection.CreateModel();
-
-                channel.QueueDeclare(queue: "contato_eventos",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-
-                var mensagem = JsonSerializer.Serialize(new { Evento = evento, Contato = contato });
-                var body = Encoding.UTF8.GetBytes(mensagem);
-
-                channel.BasicPublish(exchange: "",
-                                     routingKey: "contato_eventos",
-                                     basicProperties: null,
-                                     body: body);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Erro ao publicar mensagem no RabbitMQ: " + ex.Message);
-            }
-        }
-
-        public void PublicarEventoNoRabbitMQ(string evento, ContatoModel contato)
-        {
-            throw new NotImplementedException();
         }
     }
 }

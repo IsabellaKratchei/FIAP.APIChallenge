@@ -12,6 +12,6 @@ namespace FIAP.APIContato.Repositories
         Task<List<ContatoModel>> BuscarPorDDDAsync(string ddd);
 
         // Novo método para publicar eventos no RabbitMQ
-        void PublicarEventoNoRabbitMQ(string evento, ContatoModel contato);
+        //void PublicarEventoNoRabbitMQ(string evento, ContatoModel contato);
     }
 }
