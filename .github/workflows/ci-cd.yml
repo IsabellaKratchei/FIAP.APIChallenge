@@ -11,35 +11,35 @@ jobs:
 
     strategy:
       matrix:
-        configuration: [Release]  # Mantido simples, mas pode incluir "Debug" se necessário
+        configuration: [Release]  # Mantido simples, mas pode incluir "Debug" se necessÃ¡rio
 
     runs-on: ubuntu-latest  # Runner do GitHub Actions
 
     env:
-      Solution_Name: FIAP.APIRegiao/FIAP.APIRegiao.sln  # Nome da sua solução no diretório raiz
+      Solution_Name: FIAP.APIRegiao/FIAP.APIRegiao.sln  # Nome da sua soluÃ§Ã£o no diretÃ³rio raiz
       Api_Project_Path: FIAP.APIRegiao/FIAP.APIRegiao.csproj
       Test_Project_Path: APIRegioes.Testes/APIRegioes.Testes.csproj
 
     steps:
-    # 1. Check-out do código
+    # 1. Check-out do cÃ³digo
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. Instalação do SDK .NET 8.0
+    # 2. InstalaÃ§Ã£o do SDK .NET 8.0
     - name: Set up .NET 8.0
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
-    # 3. Restaurar dependências da solução
+    # 3. Restaurar dependÃªncias da soluÃ§Ã£o
     - name: Restore dependencies
       run: dotnet restore ${{ env.Solution_Name }}
 
-    # 4. Compilar a solução inteira (com testes inclusos)
+    # 4. Compilar a soluÃ§Ã£o inteira (com testes inclusos)
     - name: Build solution
       run: dotnet build ${{ env.Solution_Name }} --configuration ${{ matrix.configuration }} --no-restore
 
-    # 5. Executar testes unitários
+    # 5. Executar testes unitÃ¡rios
     - name: Run unit tests
       run: dotnet test ${{ env.Test_Project_Path }} --configuration ${{ matrix.configuration }} --no-build --logger "trx"
 
@@ -49,7 +49,7 @@ jobs:
 
     # 7. Upload dos artefatos de build (opcional)
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: api-build
         path: ./publish
