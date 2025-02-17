@@ -1,65 +1,198 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using FIAP.APIContato.Controllers;
+using FIAP.APIContato.Models;
+using FIAP.APIContato.Services;
+using FIAP.APIContato.Repositories;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Json;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
-using FIAP.APIContato.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace APIContato.Testes
 {
     [TestFixture]
     public class ContatoControllerTests
     {
-        private HttpClient _client;
+        private Mock<IContatoService> _contatoServiceMock;
+        private Mock<IContatoRepository> _contatoRepositoryMock;
+        private ContatoController _controller;
 
-        /// <summary>
-        /// Sets up the test environment.
-        /// </summary>
         [SetUp]
-        public void SetUp()
+        public void Setup()
         {
-            var factory = new WebApplicationFactory<Program>();
-            _client = factory.CreateClient();
-        }
-
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        [Test]
-        public async Task GetContatos_ShouldReturnOkResponseAsync()
-        {
-            var response = await _client.GetAsync("/api/contatos");
-
-            // Certifique-se de que a resposta tenha sucesso
-            response.EnsureSuccessStatusCode();
-
-            // Verifique se o status da resposta é OK
-            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            _contatoServiceMock = new Mock<IContatoService>();
+            _contatoRepositoryMock = new Mock<IContatoRepository>();
+            _controller = new ContatoController(_contatoServiceMock.Object, _contatoRepositoryMock.Object);
         }
 
         [Test]
-        public async Task PostContato_ValidContato_ShouldReturnCreatedResponseAsync()
+        public async Task Get_DeveRetornarOkComListaDeContatos()
         {
-            // Criando o objeto de contato dentro do teste
-            var contato = new ContatoModel
+            // Arrange
+            var contatos = new List<ContatoModel>
             {
-                Nome = "John Doe",
-                Email = "johndoe@example.com",
-                DDD = "11",
-                Telefone = "234567890",
-                Regiao = "Sudeste"
+                new ContatoModel { Id = 1, Nome = "João",Email = "joao@gmail.com", Telefone = "999999999", DDD = "11" , Regiao = "Sudeste" },
+                new ContatoModel { Id = 2, Nome = "Maria",Email = "maria@gmail.com", Telefone = "988888888", DDD = "21", Regiao = "Sudeste" }
             };
 
-            var response = await _client.PostAsJsonAsync("/api/contatos", contato);
+            _contatoServiceMock.Setup(s => s.BuscarTodosAsync()).ReturnsAsync(contatos);
 
-            // Certifique-se de que a resposta tenha sucesso
-            response.EnsureSuccessStatusCode();
+            // Act
+            var resultado = await _controller.Get();
 
-            // Verifique se o status da resposta é Created
-            Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
+            // Assert
+            var okResult = resultado as OkObjectResult;
+            Assert.NotNull(okResult);
+            Assert.AreEqual(200, okResult.StatusCode);
+            Assert.AreEqual(contatos, okResult.Value);
+        }
+
+        [Test]
+        public async Task GetById_ContatoExistente_DeveRetornarOk()
+        {
+            // Arrange
+            var contato = new ContatoModel { Id = 1, Nome = "Carlos", Email = "carlos@gmail.com", Telefone = "999999999", DDD = "11", Regiao="Sudeste" };
+            _contatoServiceMock.Setup(s => s.BuscarPorIdAsync(1)).ReturnsAsync(contato);
+
+            // Act
+            var resultado = await _controller.GetById(1);
+
+            // Assert
+            var okResult = resultado as OkObjectResult;
+            Assert.NotNull(okResult);
+            Assert.AreEqual(200, okResult.StatusCode);
+            Assert.AreEqual(contato, okResult.Value);
+        }
+
+        [Test]
+        public async Task GetById_ContatoInexistente_DeveRetornarNotFound()
+        {
+            // Arrange
+            _contatoServiceMock.Setup(s => s.BuscarPorIdAsync(It.IsAny<int>())).ReturnsAsync((ContatoModel)null);
+
+            // Act
+            var resultado = await _controller.GetById(999);
+
+            // Assert
+            var notFoundResult = resultado as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.AreEqual(404, notFoundResult.StatusCode);
+        }
+
+        [Test]
+        public async Task Criar_ContatoValido_DeveRetornarCreated()
+        {
+            // Arrange
+            var contato = new ContatoModel { Nome = "Carlos", Email = "carlos@gmail.com", Telefone = "988887777", DDD = "11", Regiao = "Sudeste" };
+            var contatoCriado = new ContatoModel { Id = 3, Nome = "Carlos", Email = "carlos@gmail.com", Telefone = "988887777", DDD = "11", Regiao = "Sudeste" };
+
+            _contatoRepositoryMock.Setup(r => r.AdicionarAsync(It.IsAny<ContatoModel>()))
+                .ReturnsAsync(contatoCriado);
+
+            // Act
+            var resultado = await _controller.Criar(contato);
+
+            // Assert
+            var createdResult = resultado as CreatedAtActionResult;
+            Assert.NotNull(createdResult);
+            Assert.AreEqual(201, createdResult.StatusCode);
+            Assert.AreEqual(contatoCriado, createdResult.Value);
+        }
+
+        [Test]
+        public async Task Criar_ContatoNulo_DeveRetornarBadRequest()
+        {
+            // Act
+            var resultado = await _controller.Criar(null);
+
+            // Assert
+            var badRequestResult = resultado as BadRequestObjectResult;
+            Assert.NotNull(badRequestResult);
+            Assert.AreEqual(400, badRequestResult.StatusCode);
+        }
+
+        [Test]
+        public async Task Editar_ContatoExistente_DeveRetornarOk()
+        {
+            // Arrange
+            var contato = new ContatoModel { Id = 2, Nome = "Maria", Email = "maria@outlook.com", Telefone = "977776666", DDD = "21", Regiao = "Sudeste" };
+            _contatoRepositoryMock.Setup(r => r.EditarAsync(It.IsAny<ContatoModel>())).ReturnsAsync(contato);
+
+            // Act
+            var resultado = await _controller.Editar(2, contato);
+
+            // Assert
+            var okResult = resultado as OkObjectResult;
+            Assert.NotNull(okResult);
+            Assert.AreEqual(200, okResult.StatusCode);
+            Assert.AreEqual(contato, okResult.Value);
+        }
+
+        [Test]
+        public async Task Apagar_ContatoExistente_DeveRetornarNoContent()
+        {
+            // Arrange
+            _contatoServiceMock.Setup(s => s.ApagarAsync(2)).ReturnsAsync(true);
+
+            // Act
+            var resultado = await _controller.Apagar(2);
+
+            // Assert
+            var noContentResult = resultado as NoContentResult;
+            Assert.NotNull(noContentResult);
+            Assert.AreEqual(204, noContentResult.StatusCode);
+        }
+
+        [Test]
+        public async Task Apagar_ContatoInexistente_DeveRetornarNotFound()
+        {
+            // Arrange
+            _contatoServiceMock.Setup(s => s.ApagarAsync(It.IsAny<int>())).ReturnsAsync(false);
+
+            // Act
+            var resultado = await _controller.Apagar(999);
+
+            // Assert
+            var notFoundResult = resultado as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.AreEqual(404, notFoundResult.StatusCode);
+        }
+
+        [Test]
+        public async Task GetByDDD_ContatoExistente_DeveRetornarOk()
+        {
+            // Arrange
+            var contatos = new List<ContatoModel>
+            {
+                new ContatoModel { Id = 2, Nome = "Maria", Email = "maria@gmail.com", Telefone = "988888888", DDD = "21", Regiao = "Sudeste" },
+            };
+
+            _contatoServiceMock.Setup(s => s.BuscarPorDDDAsync("21")).ReturnsAsync(contatos);
+
+            // Act
+            var resultado = await _controller.GetByDDD("21");
+
+            // Assert
+            var okResult = resultado as OkObjectResult;
+            Assert.NotNull(okResult);
+            Assert.AreEqual(200, okResult.StatusCode);
+            Assert.AreEqual(contatos, okResult.Value);
+        }
+
+        [Test]
+        public async Task GetByDDD_ContatoInexistente_DeveRetornarNotFound()
+        {
+            // Arrange
+            _contatoServiceMock.Setup(s => s.BuscarPorDDDAsync("99")).ReturnsAsync(new List<ContatoModel>());
+
+            // Act
+            var resultado = await _controller.GetByDDD("99");
+
+            // Assert
+            var notFoundResult = resultado as NotFoundObjectResult;
+            Assert.NotNull(notFoundResult);
+            Assert.AreEqual(404, notFoundResult.StatusCode);
         }
     }
 }
