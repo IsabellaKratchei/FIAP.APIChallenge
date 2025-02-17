@@ -53,3 +53,86 @@ jobs:
       with:
         name: api-build
         path: ./publish
+
+
+name: CI/CD for Regiao and Contato APIs
+
+on:
+  push:
+    branches: [ "main" ]  # Executa o pipeline ao push na branch main
+  pull_request:
+    branches: [ "main" ]  # Executa em pull requests na branch main
+
+jobs:
+  build-and-test:
+
+    strategy:
+      matrix:
+        configuration: [Release]
+
+    runs-on: ubuntu-latest
+
+    env:
+      # Caminhos das soluções
+      Regiao_Solution_Name: FIAP.APIRegiao/FIAP.APIRegiao.sln
+      Contato_Solution_Name: FIAP.APIContato/FIAP.APIContato.sln
+      
+      # Caminhos dos projetos
+      Regiao_Api_Project_Path: FIAP.APIRegiao/FIAP.APIRegiao.csproj
+      Contato_Api_Project_Path: FIAP.APIContato/FIAP.APIContato.csproj
+
+      # Caminhos dos testes
+      Regiao_Test_Project_Path: APIRegioes.Testes/APIRegioes.Testes.csproj
+      Contato_Test_Project_Path: APIContato.Testes/APIContato.Testes.csproj
+
+    steps:
+    # 1. Check-out do código
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 2. Instalação do SDK .NET 8.0
+    - name: Set up .NET 8.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    # 3. Restaurar dependências das soluções
+    - name: Restore dependencies (Regiao API)
+      run: dotnet restore ${{ env.Regiao_Solution_Name }}
+
+    - name: Restore dependencies (Contato API)
+      run: dotnet restore ${{ env.Contato_Solution_Name }}
+
+    # 4. Compilar as soluções
+    - name: Build solution (Regiao API)
+      run: dotnet build ${{ env.Regiao_Solution_Name }} --configuration ${{ matrix.configuration }} --no-restore
+
+    - name: Build solution (Contato API)
+      run: dotnet build ${{ env.Contato_Solution_Name }} --configuration ${{ matrix.configuration }} --no-restore
+
+    # 5. Executar testes unitários
+    - name: Run unit tests (Regiao API)
+      run: dotnet test ${{ env.Regiao_Test_Project_Path }} --configuration ${{ matrix.configuration }} --no-build --logger "trx"
+
+    - name: Run unit tests (Contato API)
+      run: dotnet test ${{ env.Contato_Test_Project_Path }} --configuration ${{ matrix.configuration }} --no-build --logger "trx"
+
+    # 6. Publicar as APIs (pacotes prontos para deployment)
+    - name: Publish Regiao API
+      run: dotnet publish ${{ env.Regiao_Api_Project_Path }} --configuration ${{ matrix.configuration }} --output ./publish-regiao
+
+    - name: Publish Contato API
+      run: dotnet publish ${{ env.Contato_Api_Project_Path }} --configuration ${{ matrix.configuration }} --output ./publish-contato
+
+    # 7. Upload dos artefatos de build (opcional)
+    - name: Upload Regiao API artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: regiao-api-build
+        path: ./publish-regiao
+
+    - name: Upload Contato API artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: contato-api-build
+        path: ./publish-contato
