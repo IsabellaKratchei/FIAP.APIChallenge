@@ -2,6 +2,7 @@ using FIAP.APIRegiao.Events;
 using FIAP.APIRegiao.Repository;
 using FIAP.APIRegiao.Service;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 
 namespace FIAP.APIRegiao
 {
@@ -86,7 +87,11 @@ namespace FIAP.APIRegiao
             app.UseCors("AllowAll");
             app.UseHttpsRedirection();
             app.UseAuthorization();
+
+            // Middleware de métricas do Prometheus
+            app.UseHttpMetrics(); // Captura métricas HTTP automaticamente
             app.MapControllers();
+            app.MapMetrics(); // Expondo métricas no endpoint /metrics
 
             app.Run();
         }
