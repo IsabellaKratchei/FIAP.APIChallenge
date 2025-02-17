@@ -65,10 +65,10 @@ namespace FIAP.APIRegiao
                 var services = scope.ServiceProvider;
                 var logger = services.GetRequiredService<ILogger<Program>>();
                 var context = services.GetRequiredService<RegiaoDbContext>();
-                var consumer = scope.ServiceProvider.GetRequiredService<RegiaoConsumer>();
+                //var consumer = scope.ServiceProvider.GetRequiredService<RegiaoConsumer>();
                 // Iniciar o consumidor de forma assíncrona sem bloquear o resto da execução
-                _ = Task.Run(() => consumer.ConsumirMensagens());
-                Console.WriteLine("Consumidor de mensagens iniciado com sucesso.");
+                //_ = Task.Run(() => consumer.ConsumirMensagens());
+                //Console.WriteLine("Consumidor de mensagens iniciado com sucesso.");
                 await PopulaRegioesSeVazioAsync(context, logger);
             }
 

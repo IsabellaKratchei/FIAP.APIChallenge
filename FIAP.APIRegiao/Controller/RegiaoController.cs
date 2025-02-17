@@ -26,7 +26,7 @@ namespace FIAP.APIRegiao.Controller
                 return NotFound(new { Message = $"DDD '{ddd}' não encontrado." });
 
             // Publicar mensagem
-            _regiaoProducer.PublicarMensagem($"Consulta realizada para DDD: {ddd}, Região: {regiao.Regiao}");
+            //_regiaoProducer.PublicarMensagem($"Consulta realizada para DDD: {ddd}, Região: {regiao.Regiao}");
 
             return Ok(regiao);
         }
