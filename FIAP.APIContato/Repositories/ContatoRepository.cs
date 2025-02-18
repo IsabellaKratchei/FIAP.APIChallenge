@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using System.Text.Json;
 using System.Text;
+using FIAP.APIRegiao.Events;
 
 namespace FIAP.APIContato.Repositories
 {
@@ -11,11 +12,13 @@ namespace FIAP.APIContato.Repositories
     {
         private readonly ContatosDbContext _dbContext;
         private readonly HttpClient _httpClient;
+        private readonly ContatoProducer _contatoProducer;
 
-        public ContatoRepository(ContatosDbContext dbContext, IHttpClientFactory httpClientFactory)
+        public ContatoRepository(ContatosDbContext dbContext, IHttpClientFactory httpClientFactory, ContatoProducer contatoProducer)
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _httpClient = httpClientFactory.CreateClient("ApiRegiao");
+            _contatoProducer = contatoProducer;
         }
 
         // Buscar contato por ID
@@ -43,6 +46,7 @@ namespace FIAP.APIContato.Repositories
 
                 // Obter a região correspondente ao DDD
                 contato.Regiao = await ObterRegiaoPorDDDAsync(contato.DDD);
+                _contatoProducer.PublicarSolicitandoRegiao("Solicitando regiao", contato.DDD);
                 if (string.IsNullOrEmpty(contato.Regiao))
                 {
                     throw new Exception($"DDD '{contato.DDD}' não encontrado.");
@@ -51,9 +55,6 @@ namespace FIAP.APIContato.Repositories
                 // Adicionar contato no banco
                 await _dbContext.Contatos.AddAsync(contato);
                 await _dbContext.SaveChangesAsync();
-
-                // Publicar o evento no RabbitMQ
-                //PublicarMensagemNoRabbitMQ("ContatoCriado", contato);
 
                 return contato;
             }
@@ -75,6 +76,7 @@ namespace FIAP.APIContato.Repositories
                     throw new Exception("Contato não encontrado para atualização!");
                 }
 
+                _contatoProducer.PublicarSolicitandoRegiao("Solicitando regiao", contato.DDD);
                 // Obter a região correspondente ao DDD
                 contato.Regiao = await ObterRegiaoPorDDDAsync(contato.DDD);
                 if (string.IsNullOrEmpty(contato.Regiao))
@@ -91,9 +93,6 @@ namespace FIAP.APIContato.Repositories
 
                 _dbContext.Contatos.Update(contatoBD);
                 await _dbContext.SaveChangesAsync();
-
-                // Publicar o evento no RabbitMQ
-                //PublicarMensagemNoRabbitMQ("ContatoAtualizado", contatoBD);
 
                 return contatoBD;
             }
@@ -117,9 +116,6 @@ namespace FIAP.APIContato.Repositories
                 _dbContext.Contatos.Remove(contato);
                 await _dbContext.SaveChangesAsync();
 
-                // Publicar o evento no RabbitMQ
-                //PublicarMensagemNoRabbitMQ("ContatoApagado", contato);
-
                 return true;
             }
             catch (Exception ex)
@@ -137,6 +133,7 @@ namespace FIAP.APIContato.Repositories
         // Obter região de outro microsserviço (via HTTP)
         private async Task<string> ObterRegiaoPorDDDAsync(string ddd)
         {
+            _contatoProducer.PublicarSolicitandoRegiao("Solicitando regiao", ddd);
             var response = await _httpClient.GetAsync($"Regiao/{ddd}");
             if (response.IsSuccessStatusCode)
             {

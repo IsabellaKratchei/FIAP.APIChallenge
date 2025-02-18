@@ -32,8 +32,8 @@ namespace FIAP.APIRegiao
             builder.Services.AddScoped<IRegiaoRepository, RegiaoRepository>();
             builder.Services.AddScoped<IRegiaoService, RegiaoService>();
             builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("RabbitMQSettings"));
+            builder.Services.AddHostedService<RegiaoConsumer>();
             builder.Services.AddSingleton<RegiaoProducer>();
-            builder.Services.AddScoped<RegiaoConsumer>();
 
             builder.Services.AddControllers();
 
@@ -65,10 +65,6 @@ namespace FIAP.APIRegiao
                 var services = scope.ServiceProvider;
                 var logger = services.GetRequiredService<ILogger<Program>>();
                 var context = services.GetRequiredService<RegiaoDbContext>();
-                //var consumer = scope.ServiceProvider.GetRequiredService<RegiaoConsumer>();
-                // Iniciar o consumidor de forma assíncrona sem bloquear o resto da execução
-                //_ = Task.Run(() => consumer.ConsumirMensagens());
-                //Console.WriteLine("Consumidor de mensagens iniciado com sucesso.");
                 await PopulaRegioesSeVazioAsync(context, logger);
             }
 
@@ -92,6 +88,7 @@ namespace FIAP.APIRegiao
             app.UseHttpMetrics(); // Captura métricas HTTP automaticamente
             app.MapControllers();
             app.MapMetrics(); // Expondo métricas no endpoint /metrics
+            app.UseRouting();
 
             app.Run();
         }

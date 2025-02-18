@@ -1,5 +1,6 @@
 using FIAP.APIContato.Models;
 using FIAP.APIContato.Repositories;
+using FIAP.APIRegiao.Events;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,13 +12,16 @@ namespace FIAP.APIContato.Controllers
     {
         private readonly IContatoService _contatoService;
         private readonly IContatoRepository _contatoRepository;
+        private readonly ContatoProducer _contatoProducer;
 
         public ContatoController(
             IContatoService contatoService, 
-            IContatoRepository contatoRepository)
+            IContatoRepository contatoRepository,
+            ContatoProducer contatoProducer)
         {
             _contatoService = contatoService;
             _contatoRepository = contatoRepository;
+            _contatoProducer = contatoProducer;
         }
 
         // Método para buscar todos os contatos
@@ -71,6 +75,7 @@ namespace FIAP.APIContato.Controllers
             try
             {
                 var novoContato = await _contatoRepository.AdicionarAsync(contato);
+                _contatoProducer.PublicarMensagem("ContatoCriado",novoContato);
                 return CreatedAtAction(nameof(GetById), new { id = novoContato.Id }, novoContato);
             }
             catch (InvalidOperationException ex)
@@ -99,6 +104,7 @@ namespace FIAP.APIContato.Controllers
 
                 contato.Id = id; // Garantir que o ID seja o mesmo
                 var contatoEditado = await _contatoRepository.EditarAsync(contato);
+                _contatoProducer.PublicarMensagem("ContatoEditado", contatoEditado);
 
                 return Ok(contatoEditado);
             }
@@ -113,11 +119,19 @@ namespace FIAP.APIContato.Controllers
         {
             try
             {
+                // Recupera o contato para ter os dados completos
+                var contatoExistente = await _contatoRepository.BuscarPorIdAsync(id);
+                if (contatoExistente == null)
+                {
+                    return NotFound($"Contato com ID {id} não encontrado.");
+                }
+
                 bool sucesso = await _contatoService.ApagarAsync(id);
                 if (!sucesso)
                 {
                     return NotFound($"Contato com ID {id} não encontrado.");
                 }
+                _contatoProducer.PublicarMensagem("ContatoExcluido", contatoExistente);
 
                 return NoContent(); // Retorna 204 No Content em caso de exclusão bem-sucedida
             }

@@ -1,0 +1,24 @@
+﻿# services:
+#   apicontato:
+#     build:
+#       context: .
+#       dockerfile: FIAP.APIContato\Dockerfile
+#     container_name: apicontato
+#     ports:
+#       - "5001:80"  Mapeando a porta 80 do container para a porta 5001 do host
+#     networks:
+#       - contato-regiao-net
+
+#   apiregiao:
+#     build:
+#       context: .
+#       dockerfile: FIAP.APIRegiao\Dockerfile
+#     container_name: apiregiao
+#     ports:
+#       - "5002:80"  Mapeando a porta 80 do container para a porta 5001 do host
+#     networks:
+#       - contato-regiao-net
+
+# networks:
+#   contato-regiao-net:
+#     driver: bridge

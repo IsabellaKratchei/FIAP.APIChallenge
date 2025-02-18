@@ -15,6 +15,7 @@ namespace FIAP.APIContato.Services
         public async Task<RegiaoModel> BuscarRegiaoPorDDDAsync(string ddd)
         {
             var response = await _httpClient.GetAsync($"Regiao/{ddd}");
+            //var response = await _httpClient.GetAsync($"http://apiregiao:80/Regiao/{ddd}");
 
             if (response.IsSuccessStatusCode)
             {

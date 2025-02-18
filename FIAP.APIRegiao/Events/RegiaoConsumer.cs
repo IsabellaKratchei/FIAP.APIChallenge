@@ -7,113 +7,109 @@ using System.Text.RegularExpressions;
 
 namespace FIAP.APIRegiao.Events
 {
-    public class RegiaoConsumer
+    public class RegiaoConsumer : BackgroundService
     {
-        //private readonly RabbitMQSettings _settings;
-        //private readonly IServiceScopeFactory _scopeFactory;  // Fábrica de escopos
-        //private readonly IRegiaoService _regiaoService;  // Repositório de regiões
+        private readonly RabbitMQSettings _settings;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger<RegiaoConsumer> _logger;
 
-        //public RegiaoConsumer(IOptions<RabbitMQSettings> options, IServiceScopeFactory scopeFactory)
-        //{
-        //    _settings = options.Value;
-        //    _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
-        //}
+        public RegiaoConsumer(IOptions<RabbitMQSettings> options,
+                              IServiceScopeFactory scopeFactory,
+                              ILogger<RegiaoConsumer> logger)
+        {
+            _settings = options.Value;
+            _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+            _logger = logger;
+        }
 
-        //public void ConsumirMensagens()
-        //{
-        //    var factory = new ConnectionFactory()
-        //    {
-        //        HostName = _settings.HostName,
-        //        Port = 5672,  // Porta padrão do RabbitMQ
-        //        UserName = "guest", // Usuário padrão do RabbitMQ
-        //        Password = "guest"  // Senha padrão do RabbitMQ
-        //    };
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            var factory = new ConnectionFactory()
+            {
+                HostName = _settings.HostName,
+                Port = 5672//,  // Porta padrão do RabbitMQ
+                //UserName = _settings.UserName,
+                //Password = _settings.Password
+            };
 
-        //    // Criar conexão e canal
-        //    using (var connection = factory.CreateConnection())
-        //    using (var channel = connection.CreateModel())
-        //    {
-        //        // Declarar a fila para garantir que ela existe
-        //        channel.QueueDeclare(queue: _settings.QueueName,
-        //                             durable: false,
-        //                             exclusive: false,
-        //                             autoDelete: false,
-        //                             arguments: null);
+            var connection = factory.CreateConnection();
+            var channel = connection.CreateModel();
 
-        //        // Criar um consumidor
-        //        var consumer = new EventingBasicConsumer(channel);
+            // Declarar a fila para garantir que ela existe
+            channel.QueueDeclare(queue: _settings.QueueName,
+                                 durable: false,
+                                 exclusive: false,
+                                 autoDelete: false,
+                                 arguments: null);
 
-        //        // Definir o que fazer quando uma mensagem for recebida
-        //        consumer.Received += async (model, ea) =>
-        //        {
-        //            var body = ea.Body.ToArray();
-        //            var mensagem = Encoding.UTF8.GetString(body);
+            var consumer = new EventingBasicConsumer(channel);
 
-        //            // Processar a mensagem (exemplo: atualizar região de um contato)
-        //            await ProcessarMensagemAsync(mensagem);
-        //        };
+            consumer.Received += async (model, ea) =>
+            {
+                var body = ea.Body.ToArray();
+                var mensagem = Encoding.UTF8.GetString(body);
 
-        //        // Consumir mensagens da fila
-        //        channel.BasicConsume(queue: _settings.QueueName,
-        //                             autoAck: true,  // Auto-acknowledgment
-        //                             consumer: consumer);
+                _logger.LogInformation($"Mensagem recebida: {mensagem}");
 
-        //        // Manter o processo em execução
-        //        Console.WriteLine("Pressione [enter] para sair.");
-        //        Console.ReadLine();
-        //    }
-        //}
+                // Processa a mensagem recebida
+                await ProcessarMensagemAsync(mensagem);
 
-        //private async Task ProcessarMensagemAsync(string mensagem)
-        //{
-        //    // Criar um escopo de serviço temporário
-        //    using (var scope = _scopeFactory.CreateScope())
-        //    {
-        //        var regiaoService = scope.ServiceProvider.GetRequiredService<IRegiaoService>();
+                // Acknowledge manual da mensagem
+                channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+            };
 
-        //        // Aqui vai processar a mensagem de região recebida
-        //        // Exemplo: buscar a região no repositório e atualizar algum contato
+            channel.BasicConsume(queue: _settings.QueueName,
+                                 autoAck: false,
+                                 consumer: consumer);
 
-        //        Console.WriteLine($"Mensagem recebida: {mensagem}");
+            // Registra a ação de encerramento do serviço para fechar a conexão e o canal
+            stoppingToken.Register(() =>
+            {
+                _logger.LogInformation("Encerrando conexão com RabbitMQ...");
+                channel.Close();
+                connection.Close();
+            });
 
-        //        // Extração do DDD da mensagem
-        //        var ddd = ExtractDDDFromMessage(mensagem);
+            return Task.CompletedTask;
+        }
 
-        //        if (!string.IsNullOrEmpty(ddd))
-        //        {
-        //            // Se a mensagem for um DDD, buscar a região
-        //            var regiao = await regiaoService.ObterRegiaoPorDDDAsync(ddd);
+        private async Task ProcessarMensagemAsync(string mensagem)
+        {
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var regiaoService = scope.ServiceProvider.GetRequiredService<IRegiaoService>();
 
-        //            if (regiao != null)
-        //            {
-        //                // Atualizar a região de algum contato com base na mensagem
-        //                // Aqui você pode fazer o que for necessário com o contato
+                _logger.LogInformation($"Processando mensagem: {mensagem}");
 
-        //                Console.WriteLine($"Região encontrada: {regiao.Regiao}");
-        //            }
-        //            else
-        //            {
-        //                Console.WriteLine($"Região não encontrada para o DDD: {ddd}");
-        //            }
-        //        }
-        //        else
-        //        {
-        //            Console.WriteLine("DDD não encontrado na mensagem.");
-        //        }
-        //    }
-        //}
+                // Extrair o DDD da mensagem
+                var ddd = ExtractDDDFromMessage(mensagem);
 
-        //// Método auxiliar para extrair o DDD da mensagem
-        //private string ExtractDDDFromMessage(string mensagem)
-        //{
-        //    // Usando expressão regular para capturar o DDD da mensagem
-        //    var match = Regex.Match(mensagem, @"DDD:\s*(\d{2})");
+                if (!string.IsNullOrEmpty(ddd))
+                {
+                    var regiao = await regiaoService.ObterRegiaoPorDDDAsync(ddd);
 
-        //    if (match.Success)
-        //    {
-        //        return match.Groups[1].Value;  // Retorna o DDD como string
-        //    }
-        //    return null;  // Se o DDD não for encontrado
-        //}
+                    if (regiao != null)
+                    {
+                        _logger.LogInformation($"Região encontrada para DDD {ddd}: {regiao.Regiao}");
+                        // Aqui você pode implementar ações adicionais, como atualizar algum registro ou notificar outros serviços
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Região não encontrada para o DDD: {ddd}");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("DDD não encontrado na mensagem.");
+                }
+            }
+        }
+
+        // Método auxiliar para extrair o DDD da mensagem usando Regex
+        private string ExtractDDDFromMessage(string mensagem)
+        {
+            var match = Regex.Match(mensagem, @"DDD:\s*(\d{2})");
+            return match.Success ? match.Groups[1].Value : null;
+        }
     }
- }
+}

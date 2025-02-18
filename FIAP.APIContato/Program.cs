@@ -1,7 +1,10 @@
 using FIAP.APIContato.Data;
+using FIAP.APIContato.Events;
 using FIAP.APIContato.Repositories;
 using FIAP.APIContato.Services;
+using FIAP.APIRegiao.Events;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 
 public class Program
 {
@@ -30,6 +33,10 @@ public class Program
         builder.Services.AddScoped<IContatoRepository, ContatoRepository>();
         builder.Services.AddScoped<IContatoService, ContatoService>();
         builder.Services.AddScoped<IRegiaoRepository, RegiaoAPIClient>();
+        // Registro das configurações do RabbitMQ
+        builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("RabbitMQSettings"));
+        // Registro do ContatoProducer como singleton para ser reutilizado
+        builder.Services.AddSingleton<ContatoProducer>();
 
         // Serviço HTTP para Regiões
         builder.Services.AddHttpClient("ApiRegiao", client =>
@@ -75,7 +82,10 @@ public class Program
 
         app.UseHttpsRedirection();
         app.UseAuthorization();
+        // Middleware de métricas do Prometheus
+        app.UseHttpMetrics(); // Captura métricas HTTP automaticamente
         app.MapControllers();
+        app.MapMetrics(); // Expondo métricas no endpoint /metrics
 
         app.UseRouting();
         app.UseEndpoints(endpoints =>
