@@ -32,7 +32,7 @@ namespace FIAP.APIRegiao
             builder.Services.AddScoped<IRegiaoRepository, RegiaoRepository>();
             builder.Services.AddScoped<IRegiaoService, RegiaoService>();
             builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("RabbitMQSettings"));
-            builder.Services.AddHostedService<RegiaoConsumer>();
+            //builder.Services.AddHostedService<RegiaoConsumer>();
             builder.Services.AddSingleton<RegiaoProducer>();
 
             builder.Services.AddControllers();

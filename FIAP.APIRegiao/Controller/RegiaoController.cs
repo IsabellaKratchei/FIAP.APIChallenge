@@ -9,12 +9,14 @@ namespace FIAP.APIRegiao.Controller
     public class RegiaoController : ControllerBase
     {
         private readonly IRegiaoService _regiaoService;
-        private readonly RegiaoProducer _regiaoProducer;
+        //private readonly RegiaoProducer _regiaoProducer;
 
-        public RegiaoController(IRegiaoService regiaoService, RegiaoProducer regiaoProducer)
+        public RegiaoController(IRegiaoService regiaoService
+            //, RegiaoProducer regiaoProducer
+            )
         {
             _regiaoService = regiaoService;
-            _regiaoProducer = regiaoProducer;
+            //_regiaoProducer = regiaoProducer;
         }
 
         [HttpGet("{ddd}")]

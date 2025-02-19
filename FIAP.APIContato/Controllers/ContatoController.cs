@@ -1,6 +1,6 @@
 using FIAP.APIContato.Models;
 using FIAP.APIContato.Repositories;
-using FIAP.APIRegiao.Events;
+//using FIAP.APIRegiao.Events;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
