@@ -12,16 +12,17 @@ namespace FIAP.APIContato.Controllers
     {
         private readonly IContatoService _contatoService;
         private readonly IContatoRepository _contatoRepository;
-        private readonly ContatoProducer _contatoProducer;
+        //private readonly ContatoProducer _contatoProducer;
 
         public ContatoController(
             IContatoService contatoService, 
-            IContatoRepository contatoRepository,
-            ContatoProducer contatoProducer)
+            IContatoRepository contatoRepository//,
+            //ContatoProducer contatoProducer
+            )
         {
             _contatoService = contatoService;
             _contatoRepository = contatoRepository;
-            _contatoProducer = contatoProducer;
+            //_contatoProducer = contatoProducer;
         }
 
         // Método para buscar todos os contatos
@@ -75,7 +76,7 @@ namespace FIAP.APIContato.Controllers
             try
             {
                 var novoContato = await _contatoRepository.AdicionarAsync(contato);
-                _contatoProducer.PublicarMensagem("ContatoCriado",novoContato);
+                //_contatoProducer.PublicarMensagem("ContatoCriado",novoContato);
                 return CreatedAtAction(nameof(GetById), new { id = novoContato.Id }, novoContato);
             }
             catch (InvalidOperationException ex)
@@ -104,7 +105,7 @@ namespace FIAP.APIContato.Controllers
 
                 contato.Id = id; // Garantir que o ID seja o mesmo
                 var contatoEditado = await _contatoRepository.EditarAsync(contato);
-                _contatoProducer.PublicarMensagem("ContatoEditado", contatoEditado);
+                //_contatoProducer.PublicarMensagem("ContatoEditado", contatoEditado);
 
                 return Ok(contatoEditado);
             }
@@ -131,7 +132,7 @@ namespace FIAP.APIContato.Controllers
                 {
                     return NotFound($"Contato com ID {id} não encontrado.");
                 }
-                _contatoProducer.PublicarMensagem("ContatoExcluido", contatoExistente);
+                //_contatoProducer.PublicarMensagem("ContatoExcluido", contatoExistente);
 
                 return NoContent(); // Retorna 204 No Content em caso de exclusão bem-sucedida
             }

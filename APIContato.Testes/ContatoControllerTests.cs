@@ -20,13 +20,14 @@ namespace APIContato.Testes
         private Mock<IContatoService> _contatoServiceMock;
         private Mock<IContatoRepository> _contatoRepositoryMock;
         private ContatoController _controller;
-        private ContatoProducer _contatoProducer;
+        //private ContatoProducer _contatoProducer;
 
         [SetUp]
         public void Setup()
         {
             _contatoServiceMock = new Mock<IContatoService>();
             _contatoRepositoryMock = new Mock<IContatoRepository>();
+            _controller = new ContatoController(_contatoServiceMock.Object, _contatoRepositoryMock.Object);
 
             // Configurar as settings do RabbitMQ para testes (certifique-se de que o RabbitMQ está rodando localmente)
             var rabbitSettings = Options.Create(new RabbitMQSettings
@@ -38,10 +39,10 @@ namespace APIContato.Testes
             });
 
             // Instancia o produtor real para testes de integração
-            _contatoProducer = new ContatoProducer(rabbitSettings);
+            //_contatoProducer = new ContatoProducer(rabbitSettings);
 
             // Instancia o controller com as dependências simuladas e o produtor real
-            _controller = new ContatoController(_contatoServiceMock.Object, _contatoRepositoryMock.Object, _contatoProducer);
+            //_controller = new ContatoController(_contatoServiceMock.Object, _contatoRepositoryMock.Object, _contatoProducer);
         }
 
         [Test]
@@ -218,7 +219,7 @@ namespace APIContato.Testes
         {
             // Arrange: Simula a publicação da mensagem
             var ddd = "11";
-            _contatoProducer.PublicarSolicitandoRegiao("SolicitandoRegiao", ddd);
+            //_contatoProducer.PublicarSolicitandoRegiao("SolicitandoRegiao", ddd);
 
             // Act: Aguarda um tempo para o RabbitMQ processar
             await Task.Delay(2000);
